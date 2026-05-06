@@ -3,6 +3,7 @@ import { getSortedPosts } from "@/lib/posts";
 
 export default function Home() {
   const posts = getSortedPosts();
+  const basePath = "/Jamesky";
 
   return (
     <div>
@@ -10,7 +11,7 @@ export default function Home() {
       <div className="space-y-8">
         {posts.map((post) => (
           <article key={post.slug} className="border border-[var(--border)] rounded-lg p-6 hover:border-[var(--accent)] transition-colors">
-            <Link href={`/posts/${post.slug}`}>
+            <Link href={`${basePath}/posts/${post.slug}`}>
               <h2 className="text-xl font-semibold mb-2 hover:text-[var(--accent)]">
                 {post.title}
               </h2>

@@ -16,7 +16,7 @@ export default function RootLayout({
       <body className="antialiased">
         <header className="border-b border-[var(--border)] py-6">
           <div className="max-w-3xl mx-auto px-6">
-            <a href="/" className="text-2xl font-bold hover:underline">
+            <a href="/Jamesky" className="text-2xl font-bold hover:underline">
               My Blog
             </a>
           </div>
