@@ -21,7 +21,6 @@ export async function processPosterImage(
 			"../../**/*.{jpg,jpeg,png,gif,webp,avif,svg}",
 			{
 				import: "default",
-				query: { w: "" },
 			},
 		);
 		const normalizedPath = path
