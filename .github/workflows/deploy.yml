@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Fetch Bangumi data
+        run: npm run update-bangumi
+
       - name: Build
         run: npm run build -- --no-prebuild
 
