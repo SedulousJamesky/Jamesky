@@ -12,43 +12,10 @@ async function fetchText(url) {
   return res.text();
 }
 
-async function fetchJSON(url) {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": "Mozilla/5.0",
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-function extractAnimeFromHTML(html) {
-  const animeList = [];
-  // Match: <a href="/subject/12345" ...> <img src="cover url"> </a> <small>Title</small>
-  // The HTML structure for anime list items in Bangumi
-  const itemRegex = /<a href="\/subject\/(\d+)"[^>]*>\s*<img src="([^"]+)"[^>]*>\s*<\/a>\s*<small>([^<]+)<\/small>/g;
-  const coverRegex = /<a href="\/subject\/\d+"[^>]*>\s*<img src="([^"]+)"[^>]*>\s*<\/a>/g;
-
-  // Try to find subject items with their covers
-  const subjectRegex = /<a href="\/subject\/(\d+)"[^>]*>\s*<img src="([^"]+)"[^>]*>\s*<\/a>\s*<small>([^<]+)<\/small>/g;
-  let match;
-  while ((match = subjectRegex.exec(html)) !== null) {
-    animeList.push({
-      id: match[1],
-      cover: match[2],
-      title: match[3].trim(),
-    });
-  }
-  return animeList;
-}
-
 async function fetchBangumiData() {
   console.log(`Fetching Bangumi anime data for user ${USER_ID}...`);
 
   try {
-    // Fetch from Bangumi's anime list pages
-    // type: do=watching, collect=watched, wish=planned
     const types = [
       { name: "do", status: "watching" },
       { name: "collect", status: "completed" },
@@ -61,14 +28,13 @@ async function fetchBangumiData() {
       console.log(`Fetching: ${url}`);
       const html = await fetchText(url);
 
-      // Extract anime from HTML
-      // Pattern: <a href="/subject/ID" class="subjectCover cover ll"><img src="COVER"></a>
-      const subjectRegex = /<a href="\/subject\/(\d+)" class="subjectCover cover ll">\s*<img src="([^"]+)"[^>]*>\s*<\/a>\s*<a href="\/subject\/\d+" class="l">([^<]+)<\/a>\s*<small class="grey">([^<]+)<\/small>/g;
+      // Pattern: cover <a> then title <a> on same line, with possible newlines in between
+      // Use [\s\S] instead of \s to handle any whitespace including \n
+      const subjectRegex = /<a href="\/subject\/(\d+)" class="subjectCover cover ll">[\s\S]*?<img src="([^"]+)"[^>]*>[\s\S]*?<\/a>[\s\S]*?<a href="\/subject\/\d+" class="l">([^<]+)<\/a>/g;
       let match;
       while ((match = subjectRegex.exec(html)) !== null) {
-        // match[2]=cover, match[3]=chinese title, match[4]=japanese title
         allAnime.push({
-          title: match[3].trim() || match[4].trim(),
+          title: match[3].trim(),
           cover: match[2],
           link: `https://bgm.tv/subject/${match[1]}`,
           status: t.status,
