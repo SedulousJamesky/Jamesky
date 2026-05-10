@@ -8,29 +8,21 @@ async function fetchBangumiData() {
   console.log(`Fetching Bangumi data for user ${USER_ID}...`);
 
   try {
-    // Fetch user collections from Bangumi API v0
-    // type: 1 = anime, 2 = manga, 3 = music, 4 = game, 6 = real
-    const url = `https://api.bgm.tv/v0/users/${USER_ID}/collections?type=1&limit=30&offset=0`;
-    console.log(`Fetching: ${url}`);
+    // Query ALL anime collection types at once
+    // subject_type=1 filters to anime media type
+    // type values: 1=wish, 2=doing(watching), 3=collect(watched), 4=on_hold, 5=dropped
+    const url = `https://api.bgm.tv/v0/users/${USER_ID}/collections?subject_type=1&limit=200&offset=0`;
+    console.log(`Fetching Bangumi anime collections: ${url}`);
 
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "MizukiBlog/1.0 (https://github.com/Jameskyzx/Jamesky)",
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await fetch(url, { headers: { "User-Agent": "MizukiBlog/1.0", "Content-Type": "application/json" } });
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`HTTP ${response.status}: ${text}`);
+      throw new Error(`HTTP ${response.status}`);
     }
 
     const data = await response.json();
-    console.log(`API response keys: ${Object.keys(data)}`);
-    console.log(`Data length: ${Array.isArray(data) ? data.length : data.data?.length}`);
-
-    // Handle both array response and object response
-    const items = Array.isArray(data) ? data : (data.data || []);
+    const items = data.data || [];
+    console.log(`Total anime items: ${items.length}`);
 
     const animeList = items.map((item) => {
       const title = item.subject?.name || item.subject?.name_cn || "Unknown";
