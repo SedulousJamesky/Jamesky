@@ -12,6 +12,38 @@ async function fetchText(url) {
   return res.text();
 }
 
+function parseAnimeFromHTML(html) {
+  const results = [];
+
+  // Split into item blocks between <li id="item_..."> and </li>
+  const itemRegex = /<li id="item_(\d+)"[^>]*>([\s\S]*?)<\/li>/g;
+  let itemMatch;
+  while ((itemMatch = itemRegex.exec(html)) !== null) {
+    const itemId = itemMatch[1];
+    const block = itemMatch[2];
+
+    // Extract cover from <img src="..." class="cover" ...>
+    const coverMatch = block.match(/<img src="([^"]+)"[^>]*class="cover"[^>]*>/);
+    // Extract title from <a href="/subject/..." class="l">TITLE</a>
+    const titleMatch = block.match(/<a href="\/subject\/\d+" class="l">([^<]+)<\/a>/);
+
+    if (coverMatch && titleMatch) {
+      let cover = coverMatch[1];
+      // Convert protocol-relative URL to https
+      if (cover.startsWith("//")) {
+        cover = "https://" + cover.slice(2);
+      }
+      results.push({
+        id: itemId,
+        cover,
+        title: titleMatch[1].trim(),
+      });
+    }
+  }
+
+  return results;
+}
+
 async function fetchBangumiData() {
   console.log(`Fetching Bangumi anime data for user ${USER_ID}...`);
 
@@ -27,16 +59,14 @@ async function fetchBangumiData() {
       const url = `https://bgm.tv/anime/list/${USER_ID}/${t.name}`;
       console.log(`Fetching: ${url}`);
       const html = await fetchText(url);
+      const items = parseAnimeFromHTML(html);
+      console.log(`Found ${t.name}: ${items.length} anime`);
 
-      // Pattern: cover <a> then title <a> on same line, with possible newlines in between
-      // Use [\s\S] instead of \s to handle any whitespace including \n
-      const subjectRegex = /<a href="\/subject\/(\d+)" class="subjectCover cover ll">[\s\S]*?<img src="([^"]+)"[^>]*>[\s\S]*?<\/a>[\s\S]*?<a href="\/subject\/\d+" class="l">([^<]+)<\/a>/g;
-      let match;
-      while ((match = subjectRegex.exec(html)) !== null) {
+      for (const item of items) {
         allAnime.push({
-          title: match[3].trim(),
-          cover: match[2],
-          link: `https://bgm.tv/subject/${match[1]}`,
+          title: item.title,
+          cover: item.cover,
+          link: `https://bgm.tv/subject/${item.id}`,
           status: t.status,
           rating: 0,
           progress: 0,
@@ -47,7 +77,6 @@ async function fetchBangumiData() {
           genre: [],
         });
       }
-      console.log(`Found ${t.name}: ${allAnime.filter(a => a.status === t.status).length} anime`);
     }
 
     // Deduplicate by title
